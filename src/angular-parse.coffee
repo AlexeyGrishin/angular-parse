@@ -2,7 +2,7 @@ module = angular.module 'Parse', []
 
 CONFIG = {}
 
-module.factory 'persist', ($q, $window) ->
+module.factory 'persist', ['$q', '$window', ($q, $window) ->
   store = $window.localStorage
 
   persist =
@@ -26,8 +26,9 @@ module.factory 'persist', ($q, $window) ->
       for key in keys
         localStorage.removeItem key
       true
+]
 
-module.factory 'ParseUtils', ($http, $window) ->
+module.factory 'ParseUtils', ['$http', '$window', ($http, $window) ->
   Parse =
     BaseUrl: "https://api.parse.com/1"
 
@@ -63,7 +64,9 @@ module.factory 'ParseUtils', ($http, $window) ->
       Parse._request("POST", "/functions/#{name}", data).then (r) ->
         r.data.result
 
-module.factory 'ParseAuth', (persist, ParseUser, ParseUtils, $q) ->
+]
+
+module.factory 'ParseAuth', ['persist', 'ParseUser', 'ParseUtils', '$q', (persist, ParseUser, ParseUtils, $q) ->
   auth =
     sessionToken: null
     currentUser: null
@@ -114,8 +117,9 @@ module.factory 'ParseAuth', (persist, ParseUser, ParseUtils, $q) ->
       persist.remove ['PARSE_SESSION_TOKEN', 'PARSE_USER_INFO']
       auth.currentUser = null
       auth.sessionToken = null
+]
 
-module.factory 'ParseModel', (ParseUtils) ->
+module.factory 'ParseModel', ['ParseUtils', (ParseUtils) ->
   class Model
     @pathBase: ->
       "/classes/#{@className}"
@@ -208,7 +212,9 @@ module.factory 'ParseModel', (ParseUtils) ->
     isDirty: =>
       not angular.equals @_cache, @encodeParse()
 
-module.factory 'ParseDefaultUser', (ParseModel) ->
+]
+
+module.factory 'ParseDefaultUser', ['ParseModel', (ParseModel) ->
   class User extends ParseModel
     @configure 'users', 'username', 'password'
     @pathBase: -> "/users"
@@ -218,11 +224,14 @@ module.factory 'ParseDefaultUser', (ParseModel) ->
         delete user.password
         user
 
-module.factory 'ParseUser', (ParseDefaultUser, ParseCustomUser) ->
+]
+
+module.factory 'ParseUser', ['ParseDefaultUser', 'ParseCustomUser', (ParseDefaultUser, ParseCustomUser) ->
   if ParseCustomUser? and (new ParseCustomUser instanceof ParseDefaultUser)
     return ParseCustomUser
   else
     return ParseDefaultUser
+]
 
 module.provider 'Parse', ->
   return {
@@ -230,12 +239,14 @@ module.provider 'Parse', ->
       CONFIG.apiKey = apiKey
       CONFIG.applicationId = applicationId
 
-    $get: (ParseModel, ParseUser, ParseAuth, ParseUtils) ->
+    $get: ['ParseModel', 'ParseUser', 'ParseAuth', 'ParseUtils', (ParseModel, ParseUser, ParseAuth, ParseUtils) ->
       BaseUrl: ParseUtils.BaseUrl
       Model: ParseModel
       User: ParseUser
       auth: ParseAuth
+    ]
   }
 
-angular.module('Parse').factory 'ParseCustomUser', (ParseDefaultUser) ->
+angular.module('Parse').factory 'ParseCustomUser', ['ParseDefaultUser', (ParseDefaultUser) ->
   ParseDefaultUser
+]

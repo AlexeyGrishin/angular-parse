@@ -17,7 +17,7 @@ files = [
   'lib/angular/angular-*.js',
   'test/support/angular-mocks.js',
   'test/support/jasmine.async.js',
-  'angular-parse.js',
+  'angular-parse.min.js',
   'test/unit/**/*.coffee'
 ];
 

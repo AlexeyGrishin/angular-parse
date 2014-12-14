@@ -18,6 +18,10 @@ module.exports = (grunt) ->
           dest: 'example/js'
           ext: '.js'
         ]
+    uglify:
+      main:
+        files:
+          'angular-parse.min.js': ['angular-parse.js']
 
     karma:
       options:
@@ -38,11 +42,11 @@ module.exports = (grunt) ->
         options:
           livereload: false
         files: ['src/**/*.coffee', 'test/**/*.coffee']
-        tasks: ['coffee', 'karma:unit:run']
+        tasks: ['coffee', 'uglify', 'karma:unit:run']
 
   grunt.loadNpmTasks name for name of grunt.file.readJSON('package.json').devDependencies when name[0..5] is 'grunt-'
 
-  grunt.registerTask 'default', ['coffee', 'karma:unit', 'watch:main']
+  grunt.registerTask 'default', ['coffee', 'uglify', 'karma:unit', 'watch:main']
   grunt.registerTask 'test', ['karma:single']
   grunt.registerTask "parse-deploy", ->
     done = @async()
