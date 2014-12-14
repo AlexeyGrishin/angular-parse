@@ -4,13 +4,15 @@ includes = (expected) ->
     try
       data = JSON.parse str
       for key, value of expected
-        return false unless data[key] == value
+        return false unless JSON.toString(data[key]) == JSON.toString(value)
       return true
     catch e
       return false
   x.toString = ->
     "Include #{angular.toJson expected}"
   x
+
+increment = (delta) -> __op: "Increment", amount: delta
 
 describe 'Model', ->
   url = null
@@ -86,7 +88,7 @@ describe 'Model', ->
 
       backend.expectPUT(
         url("/classes/Car/existingID123"),
-        includes(car.attributes()),
+        includes("make":"Toyota","model":"Camry"),
         signedHeaders
 
       ).respond
@@ -98,6 +100,28 @@ describe 'Model', ->
       backend.flush()
       expect(car.updatedAt).toEqual('2012-08-20T02:06:57.931Z')
       expect(car.isNew()).toEqual(false)
+
+    it 'calls PUT with increment for numeric valueschange', inject () ->
+      car = new Car
+        make: "Toyota"
+        year: 2005
+        model: "Camry"
+        objectId: 'existingID123'
+
+      car.year = 2006
+      backend.expectPUT(
+        url("/classes/Car/existingID123"),
+        includes(make:"Toyota", model:"Camry", year: increment(+1)),
+        signedHeaders
+
+      ).respond
+        updatedAt: "2012-08-20T02:06:57.931Z"
+
+      car.save().then (c) ->
+        expect(c).toBe(car)
+
+      backend.flush()
+      expect(car.year).toBe(2006)
 
   describe 'isDirty', ->
 
@@ -152,7 +176,11 @@ describe 'Model', ->
       expect(car.isDirty()).toBe(true)
       backend.expectPUT(
         url("/classes/Car/existingID123"),
-        car.attributes(),
+        {
+          make: "Toyota"
+          model: "Corolla"
+          parts: ['engine', 'chassis']
+        },
         signedHeaders
 
       ).respond

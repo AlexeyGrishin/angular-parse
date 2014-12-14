@@ -138,7 +138,7 @@ module.factory 'ParseModel', (ParseUtils) ->
     constructor: (data) ->
       for key, value of data
         @[key] = value
-      @_saveCache()
+      @_saveCache() unless @isNew()
 
     isNew: =>
       !@objectId
@@ -166,7 +166,7 @@ module.factory 'ParseModel', (ParseUtils) ->
         return @
 
     update: =>
-      ParseUtils._request('PUT', @, @encodeParse())
+      ParseUtils._request('PUT', @, @safeUpdateParse())
       .then (response) =>
         @updatedAt = response.data.updatedAt
         @_saveCache()
@@ -201,6 +201,18 @@ module.factory 'ParseModel', (ParseUtils) ->
           result[key] = obj
 
       result
+
+    safeUpdateParse: =>
+      result = @encodeParse()
+      for key, value of result
+        if typeof value == 'number' and @_cache?[key] isnt undefined
+          delta = value - @_cache[key]
+          if delta != 0
+            result[key] = __op: "Increment", amount: delta
+          else
+            delete result[key]
+      result
+
 
     _saveCache: =>
       @_cache = angular.copy @encodeParse()

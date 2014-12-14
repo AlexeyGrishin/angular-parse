@@ -195,6 +195,7 @@
       function Model(data) {
         this.isDirty = __bind(this.isDirty, this);
         this._saveCache = __bind(this._saveCache, this);
+        this.safeUpdateParse = __bind(this.safeUpdateParse, this);
         this.encodeParse = __bind(this.encodeParse, this);
         this.attributes = __bind(this.attributes, this);
         this.destroy = __bind(this.destroy, this);
@@ -208,7 +209,9 @@
           value = data[key];
           this[key] = value;
         }
-        this._saveCache();
+        if (!this.isNew()) {
+          this._saveCache();
+        }
       }
 
       Model.prototype.isNew = function() {
@@ -253,7 +256,7 @@
 
       Model.prototype.update = function() {
         var _this = this;
-        return ParseUtils._request('PUT', this, this.encodeParse()).then(function(response) {
+        return ParseUtils._request('PUT', this, this.safeUpdateParse()).then(function(response) {
           _this.updatedAt = response.data.updatedAt;
           _this._saveCache();
           return _this;
@@ -295,6 +298,26 @@
               };
             }
             result[key] = obj;
+          }
+        }
+        return result;
+      };
+
+      Model.prototype.safeUpdateParse = function() {
+        var delta, key, result, value, _ref;
+        result = this.encodeParse();
+        for (key in result) {
+          value = result[key];
+          if (typeof value === 'number' && ((_ref = this._cache) != null ? _ref[key] : void 0) !== void 0) {
+            delta = value - this._cache[key];
+            if (delta !== 0) {
+              result[key] = {
+                __op: "Increment",
+                amount: delta
+              };
+            } else {
+              delete result[key];
+            }
           }
         }
         return result;
